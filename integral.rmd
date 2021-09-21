@@ -1,5 +1,19 @@
+---
+title: Approximer l'aire sous une courbes par des méthodes Monte Carlo Black and white,
+  simple et en utilisant une loi béta
+author: "Ragousandirane RADJASANDIRANE"
+date: "20/09/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+require(MASS)
+```
+
 # Fonction à étudier g(x)
-On réimplemente la fonction g de l'énoncé
+On réimplemente la fonction g de l'énoncé.
 ```{r}
 g <- function(x){
   return ((exp(x) - 1 )/(exp(1) - 1))
@@ -7,7 +21,7 @@ g <- function(x){
 ```
 
 # Visualisation de la fonction g
-On choisit des valeurs de X allant de 0 à 2 pour visualiser la courbe de la fonction
+On choisit des valeurs de X allant de 0 à 2 pour visualiser la courbe de la fonction g.
 ```{r}
 X <- seq(from = 0, to = 2, len = 100)
 plot(X,g(X), type = "l")
@@ -15,7 +29,12 @@ plot(X,g(X), type = "l")
 ```
 
 # Aire sous la courbe selon l'énoncé et la fonction integrate de R
-On récupère les solutions optimales pour les comparer à nos solutions calculées
+On récupère les solutions optimales pour les comparer à nos solutions calculées.
+
+**solution** correspond à la solution donnée par l'énoncé.
+
+**solution_R** correspond à la solution donnée par la fonction *integrate* de R qui permet de calculer l'aire sous une courbe.
+
 ```{r}
 solution <- (exp(2) - 3) / (exp(1) - 1)
 solution_R <- integrate(g, lower = 0, upper = 2)
@@ -24,11 +43,16 @@ print(solution_R)
 ```
 
 # MC black and white
-I <- m(b-a) * (ns/n)
-ns : nombre de succès
-
 On implemente la fonction qui va estimer l'aire sous la courbe par la méthode de MC BW.
-On tire aléatoirement des points V et on détermine si ces points sont sous la courbe par le calcul : V <= g(U)
+
+On tire aléatoirement des points (V,U) et on détermine si ces points sont sous la courbe en vérifiant que V <= g(U).
+
+On compte le nombre de succès (ns) qui revient à compter le nombre de points qui sont effectivement sous la courbe.
+
+
+On peut, avec ce nombre de succès, approximer l'aire sous la courbe par rapport à l'aire du carré ( formé à l'aide du majorant de la fonction et l'abscisse de ce majorant (ici le majorant est g(2))) en utilisant la formule : 
+**I <- m(b-a).(ns/n)**
+
 ```{r}
 estim_I <- function(n) {
   b <- 2
@@ -43,7 +67,7 @@ estim_I <- function(n) {
 ```
 
 
-On obtient une valeur proche de la valeur optimale avec 100000 points
+On obtient une valeur proche de la valeur optimale (= `r solution`) avec 100000 points
 ```{r}
 estim_I(100000)
 ```
@@ -104,7 +128,211 @@ mse_I_simple <- function(n,solution_I,nrep){
 mse_I_simple(1000,solution,1000)
 ```
 
+# Loi beta
+
+shape1 : alpha
+shape2 : beta
+```{r}
+n = 100000
+x = rbeta(n, shape1 = 2, shape2 = 1)
+```
+
 dbeta : fonction de densité de loi beta
 mais nous on multiplie par 2
 
+```{r}
+truehist(x)
+```
+
+```{r}
+valeur_x = seq(from = 0, to = 1, len = 1000)
+valeur_y = dbeta(valeur_x, shape1 = 2, shape2 = 1)
+```
+
+```{r}
+truehist(x)
+lines(valeur_x, valeur_y)
+```
+# Fonction de la variable X
+Y = 2X
+```{r}
+Y = 2*x
+round(range(Y),5)
+truehist(Y)
+```
+La densité change car on a multiplié par 2
+
+On recaclule la nouvelle densité : 
+```{r}
+dY <- function(y){
+  return(1/2*dbeta(y/2, shape1 = 2, shape2 = 1))
+}
+```
+
+```{r}
+valeur_x = seq(from = 0, to = 2, len = 1000)
+valeur_y = dY(valeur_x)
+truehist(Y)
+lines(valeur_x, valeur_y)
+```
+Fonction random
+```{r}
+rY <- function(n){
+  return(2 * rbeta(n, shape1 = 2, shape2 = 1))
+}
+```
+
+```{r}
+h <- function(x){
+  return(g(x) / dY(x))
+}
+
+```
+
+
+```{r}
+truehist(h(x))
+mean(h(valeur_x))
+```
+
+# Estimateur de I par la méthode d'échantillonnage par importance
+I = E[h(x)] --> E[g(x) / dY(x)]
+x --> rY : valeur aléatoire tiré dans la loi de Y
+
+```{r}
+estim_I_importance <- function(n){
+  y = rY(n)
+  I_estim = mean(g(y) / dY(y))
+  return(I_estim)
+}
+```
+
+
+```{r}
+estim_I_importance((50000))
+```
+
+
+```{r}
+mse_I_importance <- function(n,solution_I,nrep){
+  valeur_I_importance <- c()
+  for (run in 1:nrep) {
+  valeur_I_importance <- c(valeur_I_importance, estim_I_importance(n))
+  }
+  MSE <- mean((valeur_I_importance - solution_I)**2)
+  truehist(valeur_I_importance)
+  abline(v = solution_I, col = "red", lwd = 2)
+  title(main = paste("mse = ",MSE))
+  return(MSE)
+}
+```
+
+
+```{r}
+n = 100
+nrep = 100000
+mse_I(n,solution,nrep)
+mse_I_simple(n,solution,nrep)
+mse_I_importance(n,solution,nrep)
+```
+
+
+```{r}
+cost <- function(par){
+  alpha = par[1]
+  beta = par[2]
+  n = 100
+  nrep = 100000
+  mse_I_importance(n,solution,nrep)
+}
+```
+
+
+```{r}
+optim(c(2,1), cost)
+```
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
 

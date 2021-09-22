@@ -294,7 +294,11 @@ my_rtarget <- function(n){
 ```
 
 ```{r}
+val_x <- seq(from = -10, to = 15, len = 1000)
+val_y <- my_dtarget((val_x))
+
 truehist(my_rtarget(100000))
+lines(val_x, val_y, col = "red", lwd= 2)
 ```
 
 

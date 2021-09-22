@@ -10,6 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+require(MASS)
+```
+
+```{r}
 lambda = 5
 ```
 
@@ -121,7 +125,194 @@ plot(table(w) / N)
 ```
 
 
+# Transformation
+
+
+# Fonction de densité
+```{r}
+my_dlaplace <- function(x){
+  res <- rep(NA, times = length(x))    
+  neg_i <- (x < 0) # filtre pour avoir que les valeurs négatives
+  res[neg_i] <- exp(x[neg_i]) / 2.0
+  res[!neg_i] <- exp(-x[!neg_i]) / 2.0
+  return(res)
+}
+
+```
+
+# Plot
+```{r}
+val_x <- seq(from = -4, to = 4, len = 1000)
+val_y <- my_dlaplace((val_x))
+plot(val_x, val_y, type = "l")
+```
+
+```{r}
+g <- function(x){
+  return((1/2) * exp(-abs(x)))
+}
+```
+
+
+
+```{r}
+my_plaplace <- function(x){
+  res <- rep(NA, times = length(x))    
+  neg_i <- (x < 0) # filtre pour avoir que les valeurs négatives
+  res[neg_i] <- (1/2) * exp(x[neg_i]) / 2.0
+  res[!neg_i] <- (1/2) * (2- exp(-x[!neg_i])) / 2.0
+  
+  return(res)
+}
+```
+
+
+```{r}
+val_x <- seq(from = -4, to = 4, len = 1000)
+val_y <- my_plaplace((val_x))
+plot(val_x, val_y, type = "l")
+```
+
+
+```{r}
+my_qlaplace <- function(p){
+  res <- rep(NA, times = length(p))    
+  pos <- (p < 1/2) # filtre pour avoir que les valeurs négatives
+  
+  res[pos] <- log(2 * p[pos])
+  res[!pos] <- -log(2 * (1 - p[!pos]))
+  
+  return(res)
+}
+```
+
+
+```{r}
+val_x <- seq(from = 0, to = 1, len = 1000)
+val_y <- my_qlaplace((val_x))
+plot(val_x, val_y, type = "l")
+```
+```{r}
+my_rlaplace <- function(n){
+  u <- runif(n)
+  return(my_qlaplace(u))
+}
+```
 
 ```{r}
 
+val_x <- seq(from = -4, to = 4, len = 1000)
+val_y <- my_dlaplace((val_x))
+
+
+res <-  my_rlaplace(10000)
+truehist(res)
+lines(val_x, val_y, col = "red", lwd  =2)
 ```
+# Rejet
+
+```{r}
+n <- 100000
+m <- sqrt(2*pi/exp(1))
+x1 <- rcauchy(n)
+x2 <- runif(n)
+filtre <- which(x2 <= dnorm(x1)/(m*dcauchy(x1)))
+truehist(x1[filtre])
+```
+
+```{r}
+my_rnorm <- function(n){
+  m <- sqrt(2*exp(1) / pi)
+  res <- my_rlaplace(n)
+  u <- runif(n)
+  p_accept <- dnorm(res) / (m * my_dlaplace((res)))
+  res_accepted <- res[p_accept > u]
+  truehist(res)
+  truehist(res_accepted)
+  val_x <- seq(from = -4, to = 4, len = 1000)
+  val_y <- dnorm(val_x)
+  lines(val_x,val_y, col = "red")
+  }
+```
+
+
+1 / m
+```{r}
+
+my_rnorm(100000)
+```
+# MCMC
+```{r}
+my_dtarget <- function(x){
+  return(0.2*dnorm(x, mean = -3, sd = 2) + 0.5*dnorm(x, mean = 0, sd = 1) + 0.3*dnorm(x, mean = 5, sd = 3) )
+}
+```
+
+```{r}
+my_dtarget(5)
+```
+
+```{r}
+val_x <- seq(from = -10, to = 15, len = 1000)
+val_y <- my_dtarget((val_x))
+plot(val_x, val_y, type = "l")
+```
+
+
+```{r}
+dprop <- function(y,x){
+    return(dnorm(y, mean = x, sd = 3))
+}
+```
+
+
+```{r}
+rprop <- function(x){
+  y <- rnorm(1, mean = x, sd = 3)
+  return(y)
+}
+```
+
+
+```{r}
+my_rtarget <- function(n){
+  res <- rep(NA, times = n)
+  res[1] <- -10
+  for(i in 2:n){
+    y <- rprop(res[i-1])
+    p <- min(c(1, (my_dtarget(y) / my_dtarget(res[i-1]) * (dprop(res[i-1], y ) / dprop(y, res[i-1]) ))))
+    u <- runif(1)
+    if(u < p){
+      res[i] <- y
+    }
+    else{
+      res[i] = res[i-1]
+    }
+  }
+  return(res)
+}
+```
+
+```{r}
+truehist(my_rtarget(100000))
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+

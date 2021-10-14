@@ -3,6 +3,7 @@ import random
 import matplotlib.pyplot as plt
 import time
 import math
+import copy
 
 def transform(text):
     nb = len(text)
@@ -26,7 +27,8 @@ def transform(text):
         
         final += last_letter
         first_col += first_letter
-    print(text)
+    print(count_letter)
+    print(indexing)
     reverse_bwt(indexing, count_letter, final)
     return final, count_letter, indexing
 
@@ -59,6 +61,46 @@ def seq_ran(n):
     seq += "$"
     return seq
 
+def FM_dico(final):
+    list_dico = []
+    dico_occ = {"$" : 0, "A" : 0, "C" : 0, "G": 0, "T": 0}
+    for i in range(1, len(final) + 1):
+        list_dico.append(copy.deepcopy(dico_occ))
+        dico_occ[final[i-1]] += 1
+
+    return list_dico
+
+def search_read(read, final, list_dico, indexing, count_letter):
+    all_key = list(indexing.keys())
+    
+    for letter in read[::-1]:
+        d = indexing[letter]
+        next_letter = all_key.index(letter) + 1
+        if next_letter in indexing:
+            e = indexing[all_key.index(letter) + 1] - 1
+        else:
+            e = len(final) - 1 
+        
+        for j in range(d,e+1):
+            pos = indexing[letter] + count_letter[j]
+            pos_final = final[pos]
+
+
+def match(final, indexing, list_dico, read):
+    L = len(final)
+
+    n = read[-1]
+    d = indexing[n]
+    f = indexing[n] + list_dico[-1][n] 
+    
+    for n in read[-2::-1]:
+        d = indexing[n] + list_dico[d][n]
+        f = indexing[n] + list_dico[f + 1][n] - 1
+        if f < d:
+            return (-1,-1)
+    return d,f
+
+
 def complexity():
     kb = 1000
     end_bwt = []
@@ -86,4 +128,9 @@ def complexity():
 if __name__ == '__main__':
     # complexity()
     text = "ATATCGT$"
+    read = "AT"
     final, count_letter, indexing = transform(text)
+    list_dico = FM_dico(final)
+    pos = match(final, indexing, list_dico, read)
+    print(text)
+    print(pos)

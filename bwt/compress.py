@@ -27,18 +27,14 @@ def transform(text):
         
         final += last_letter
         first_col += first_letter
-    print(count_letter)
-    print(indexing)
-    reverse_bwt(indexing, count_letter, final)
-    return final, count_letter, indexing
+    return final, count_letter, indexing, first_col
 
 def reverse_bwt(indexing, count_letter, final):
     original = []
     new_index = 0
     len_seq = len(final) - 1
-    count = 1
-    position = [len_seq]*(len_seq+1)
-    print(final)
+    count = 0
+    position = [0]*(len_seq+1)
     while 1:
         letter = final[new_index]
         if letter == "$":
@@ -50,8 +46,7 @@ def reverse_bwt(indexing, count_letter, final):
 
         new_index = indexing[letter] + count_letter[new_index]
         count += 1
-    print(position)
-    return original
+    return original,position
 
 def seq_ran(n):
     nuc = ["A","T","C","G"]
@@ -62,37 +57,35 @@ def seq_ran(n):
     return seq
 
 def FM_dico(final):
-    list_dico = []
     dico_occ = {"$" : 0, "A" : 0, "C" : 0, "G": 0, "T": 0}
-    for i in range(1, len(final) + 1):
-        list_dico.append(copy.deepcopy(dico_occ))
+    list_dico = []
+    list_dico.append(copy.deepcopy(dico_occ))
+    for i in range(1,len(final) + 1):
         dico_occ[final[i-1]] += 1
-
+        list_dico.append(copy.deepcopy(dico_occ))
     return list_dico
+ 
+def search_read(read, final, list_dico, indexing, count_letter, first_col, position):
+    d,f = (1,2)
+    final_position = []
+    for i in range(1, len(read)):
+        first = read[-i-1]
+        second = read[-i]
+        sub_read = second +""+first
+        d,f = match(indexing, list_dico, sub_read)
+        for j in range(d, f + 1):
+            if final[j] == first:
+                if first_col[j] == second:
+                    pos_first = position[j]
+                    final_position += [pos_first, pos_first+1]
 
-def search_read(read, final, list_dico, indexing, count_letter):
-    all_key = list(indexing.keys())
-    
-    for letter in read[::-1]:
-        d = indexing[letter]
-        next_letter = all_key.index(letter) + 1
-        if next_letter in indexing:
-            e = indexing[all_key.index(letter) + 1] - 1
-        else:
-            e = len(final) - 1 
-        
-        for j in range(d,e+1):
-            pos = indexing[letter] + count_letter[j]
-            pos_final = final[pos]
+    print(final_position)
 
+def match(indexing, list_dico, read):
 
-def match(final, indexing, list_dico, read):
-    L = len(final)
-
-    n = read[-1]
-    d = indexing[n]
-    f = indexing[n] + list_dico[-1][n] 
-    
+    nt = read[-1]
+    d = indexing[nt]
+    f = indexing[nt] + list_dico[-1][nt] - 1
     for n in read[-2::-1]:
         d = indexing[n] + list_dico[d][n]
         f = indexing[n] + list_dico[f + 1][n] - 1
@@ -124,13 +117,59 @@ def complexity():
     plt.xlabel("Taille")
     plt.ylabel("Time (s)")
     plt.show()
+    
+def pos(start, end,  pos_list):
+    position = []
+    for i in range(start, end+1):
+        position.append(pos_list[i] + 1)
+    return position
 
+def read_fasta(fasta_file, reference, output):
+    seq = ""
+    to_write = []
+    ref_genome = get_ref(reference)
+    ref_genome += "$"
+    read = ""
+    zeros = 0
+    one = 0
+    two = 0
+    with open(fasta_file, "r") as filin, open(output, "w") as filout:
+        for line in filin:
+            if line.startswith(">"):
+                if read != "":
+                    final, count_letter, indexing, first_col = transform(ref_genome)
+                    origin, position = reverse_bwt(indexing, count_letter, final)
+
+                    list_dico = FM_dico(final)
+                    
+                    d,f = match(indexing, list_dico, read)
+                    if (d,f) == (-1,-1):
+                        pos_in_seq = 0
+                        zeros += 1
+                    else:
+                        pos_in_seq = pos(d,f,position)
+                        if len(pos_in_seq) == 1:
+                            one += 1
+                        elif len(pos_in_seq) == 2:
+                            two += 1
+                    to_write = "{} \t {} \t {}\n".format(read, read_name, pos_in_seq)
+                    filout.write(to_write)
+                read_name = line[1:].strip()
+                read = ""
+            else:
+                read += line.strip()
+
+    print("0 : {} ; 1 : {}; 2 : {}".format(zeros, one, two))
+def get_ref(fasta_file):
+    seq = ""
+    with open(fasta_file) as filin:
+        for line in filin:
+            if not line.startswith(">"):
+                seq += line.strip()
+    return seq
 if __name__ == '__main__':
-    # complexity()
-    text = "ATATCGT$"
-    read = "AT"
-    final, count_letter, indexing = transform(text)
-    list_dico = FM_dico(final)
-    pos = match(final, indexing, list_dico, read)
-    print(text)
-    print(pos)
+    path1 = "masterBI/reads_1000_10_patient_6.fna"
+    path2 = "masterBI/reads_10000_30_patient_6.fna"
+    
+    ref = "masterBI/NC_045512-N.fna"
+    read_fasta(path2,ref,"output2.txt")

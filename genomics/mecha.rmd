@@ -1,0 +1,163 @@
+---
+title: "3e partie"
+author: "Ragousandirane"
+date: "18/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+load("~/cours/Cours/genomics/TP_Genomics/Data_HCA/expression_matrix_31T_3N_samples.RData")
+load("~/cours/Cours/genomics/TP_Genomics/Data_HCA/expression_array_annotations.RData")
+load("~/cours/Cours/genomics/TP_Genomics/Data_HCA/Clinical_annotations.RData")
+```
+
+```{r}
+all_mean = apply(exp,1, mean)
+indice_mean = which(all_mean >= 3)
+new_data_exp = exp[indice_mean,]
+```
+
+
+```{r}
+new_data
+
+```
+
+
+
+
+```{r}
+gene_table[indice_mean,]
+```
+
+
+```{r}
+library(limma)
+Normal= c(1,1,1,0,0,0,0)
+UHCA = c(0,0,0,1,1,1,1)
+df = data.frame(Normal, UHCA)
+rownames(df) = c("Sample1","Sample2","Sample3","Sample4","Sample5","Sample6","Sample7")
+df
+```
+```{r}
+samp = intersect(annot[which(annot$Molecular.group == "UHCA"), "Sample.ID"], colnames(exp))
+normsamp = grep("N", colnames(exp), value = T)
+```
+
+logFC < 0 : gene sous exprimer
+
+```{r}
+exp.comp = exp[, c(normsamp, samp)]
+fit <- lmFit(exp.comp, df)
+cont.matrix <- makeContrasts(UHCA-Normal, levels=df)
+fit2 <- contrasts.fit(fit, cont.matrix)
+fit2 <- eBayes(fit2)
+options(digits=2)
+RES=topTable(fit2, adjust="BH", n=nrow(exp.comp))
+```
+
+```{r}
+RES
+```
+
+
+```{r}
+```
+
+```{r}
+rownames(RES)
+```
+
+
+```{r}
+gene_table
+```
+
+
+```{r}
+
+gene_symbol_set = gene_table[match(rownames(RES), gene_table$Probe.Set), "Gene.symbol"]
+```
+
+
+```{r}
+gene_name_final = gene_table[gene_symbol_set != "",]
+```
+
+
+```{r}
+RES_modified = cbind(RES,gene_symbol_set)
+```
+
+
+```{r}
+final_RES = RES[which(RES_modified$gene_symbol_set != ""),]
+write.table(final_RES,"final_res.txt", sep=",")
+```
+
+
+```{r}
+plot(final_RES$logFC, -log(final_RES$adj.P.Val))
+```
+```{r}
+up = gene_table[which(final_RES$adj.P.Val < 0.05 & final_RES$logFC > 0),]
+down = gene_table[which(final_RES$adj.P.Val < 0.05 & final_RES$logFC < 0),]
+
+```
+
+surexprimé : 29 (up)
+sous exprimé : 28 : (down)
+
+```{r}
+nrow(up)
+nrow(down)
+```
+
+```{r}
+final_RES[up,]
+```
+
+
+
+```{r}
+source("TP_Genomics/Data_HCA/Functions_for_supervised_analysis.R")
+```
+
+```{r}
+load("TP_Genomics/Data_HCA/gene_sets.RData")
+```
+
+```{r}
+enrichmentTest(gene.sets, up, unique(gene_table$Gene.symbol))
+```
+
+# GSEA
+```{r}
+BiocManager::install("fgsea")
+```
+
+```{r}
+library(fgsea)
+rank = final_RES$logFC
+
+fg = fgsea(pathways = gene.sets, starts = rank, minSize = 30, maxSize = 500, nperm=1000)
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+

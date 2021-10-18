@@ -1,0 +1,127 @@
+---
+title: "2e partie"
+author: "Ragousandirane"
+date: "18/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+data = na.omit(read.delim("~/cours/Cours/genomics/TP_Genomics/Data_HCA/WES_mutations.txt"))
+```
+
+
+```{r}
+data
+
+```
+
+
+```{r}
+name_sample = unique(data$Sample.ID)
+name_sample
+```
+
+
+```{r}
+nb_mut = summary(data$Sample.ID)
+```
+
+
+```{r}
+median_mut = median(nb_mut)
+min_mut = min(nb_mut)
+max_mut = max(nb_mut)
+
+```
+
+
+```{r}
+quantile(nb_mut)
+
+```
+16/50 = 0.32 mut par megabase
+
+```{r}
+
+load("~/cours/Cours/genomics/TP_Genomics/Data_HCA/Clinical_annotations.RData")
+```
+
+
+```{r}
+annot$Sample.ID
+indice_match = match(data$Sample.ID, annot$Sample.ID)
+indice_match
+mol_group_mut = annot[indice_match,"Molecular.group"]
+```
+
+
+```{r}
+new_data = cbind(data,mol_group_mut)
+
+```
+
+
+
+```{r}
+new_data
+```
+
+
+```{r}
+gene_bhca = new_data[which(new_data$mol_group_mut == "bHCA"), "Gene.symbol"]
+table_bhca  = table(gene_bhca)
+head(sort(table_bhca, decreasing = T), 10)
+```
+
+
+```{r}
+
+for (group in unique(new_data$mol_group_mut)){
+  
+  genes = new_data[which(new_data$mol_group_mut == group), "Gene.symbol"]
+  table_bhca  = table(genes)
+  print(group)
+  print(head(sort(table_bhca, decreasing = T), 10))
+  
+}
+```
+pour le groupe UHCA on peut pas choper les drivers avec cette méthode
+mutation troncante --> tumor sup; enleve fonction; muté 2 fois
+mutation onco : hot spot : une seule mutation suffit
+
+```{r}
+#new_data[which(new_data$Gene.symbol == "HNF1A" & new_data$Mutation.Type == "nonsense"),]
+
+new_data[which(new_data$Gene.symbol == "HNF1A"),"Mutations.in.Amino.Acid"]
+
+```
+
+
+```{r}
+
+new_data[which(new_data$Gene.symbol == "CTNNB1"),"Mutations.in.Amino.Acid"]
+```
+
+
+```{r}
+
+
+```
+
+
+```{r}
+
+
+```
+
+
+```{r}
+
+
+```
+

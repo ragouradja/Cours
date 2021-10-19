@@ -1,0 +1,112 @@
+---
+title: "omic"
+author: "Ragousandirane"
+date: "19/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(mixOmics)
+```
+
+
+```{r}
+path = "~/cours/Cours/Omics/data/"
+mirna = read.csv(paste(path,"mirna.csv",sep=""), header = TRUE, row.names = 1)
+mrna = read.csv(paste(path,"mrna.csv",sep=""), header = TRUE, row.names = 1)
+protein = read.csv(paste(path,"protein.csv",sep=""), header = TRUE, row.names = 1)
+sample_group = read.csv(paste(path,"sample_group.csv",sep=""), header = TRUE, row.names = 1)
+
+name_dtf = list(mirna, mrna, protein)
+```
+
+```{r}
+name_dtf
+```
+
+
+150 ech
+mirna : 185 var
+mrna : 201 var
+protein : 143
+sample_group : 2
+```{r}
+
+coeff_var <- function(vecteur) {
+  mean_vec = mean(vecteur)
+  sd_vec = sd(vecteur)
+  return(sd_vec / mean_vec)
+}
+```
+
+```{r}
+for (dtf in name_dtf) {
+  print(dtf)
+  value = apply(dtf,1,coeff_var)
+  ind_filtre = which(value < 0.15)
+  
+  hist(value[ind_filtre]) 
+}
+```
+mirna --> mrna
+mrna
+protein
+
+
+```{r}
+
+apply(mirna, 1, coeff_var) <= 0.15
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+v
+

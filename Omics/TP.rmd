@@ -26,8 +26,17 @@ name_dtf = list(mirna, mrna, protein)
 ```
 
 ```{r}
-name_dtf
+mirna
 ```
+```{r}
+mrna
+```
+
+
+```{r}
+protein
+```
+
 
 
 150 ech
@@ -45,68 +54,139 @@ coeff_var <- function(vecteur) {
 ```
 
 ```{r}
+list_dtf_filter = list()
 for (dtf in name_dtf) {
-  print(dtf)
-  value = apply(dtf,1,coeff_var)
-  ind_filtre = which(value < 0.15)
-  
-  hist(value[ind_filtre]) 
+  value = apply(dtf,2,coeff_var)
+  ind_value = which(abs(value) >= 0.15)
+  hist(value[ind_value]) 
+  list_dtf_filter = c(list_dtf_filter, list(value[ind_value]))
 }
 ```
 mirna --> mrna
 mrna
 protein
 
+```{r}
+list_dtf_filter
+mirna_filter = list_dtf_filter[[1]]
+mrna_filter = list_dtf_filter[[2]]
+protein_filter = list_dtf_filter[[3]]
+```
 
 ```{r}
-
-apply(mirna, 1, coeff_var) <= 0.15
+length(mirna_filter)
+length(mrna_filter)
+length(protein_filter)
 ```
 
 
 ```{r}
-
+max_var_mrna = which.max(mrna_filter)
 ```
+
+gene le plus variant : 160
+```{r}
+name_var = names(mrna_filter[max_var_mrna])
+name_var
+```
+Modulates the liver regeneration
+Chromosome 2
+taille nuc = 2286
+meox2 : 303
+meox1 : 254
+
+```{r}
+protein_filter[name_var]
+```
+
+# Partie 2
+
+ACP : décrire toutes les variables en qq composantes principales (réduire la dimension des data)
+
+```{r}
+library(mixOmics)
+```
+```{r}
+protein[names(protein_filter)]
+```
+
+
+```{r}
+mrna_filter = mrna[names(mrna_filter)]
+mirna_filter = mirna[names(mirna_filter)]
+protein_filter = protein[names(protein_filter)]
+```
+
+
+
+```{r}
+pca_mrna = pca(mrna_filter, ncomp = 2, center = T, scale  =F)
+```
+
+
+```{r}
+pca_mrna$x
+```
+
+
+Colorer selon sample group
+```{r}
+plotIndiv(pca_mrna, group = sample_group$Y, legend = T)
+```
+
+```{r}
+plotVar(pca_mrna, legend = T, cutoff = 0.75)
+```
+
+
+```{r}
+spca_mrna = spca(mrna_filter, keepX = c(10,5))
+```
+
+```{r}
+plotVar(spca_mrna)
+```
+
+
+```{r}
+var_selected = c(selectVar(spca_mrna, comp = 1),selectVar(spca_mrna, comp = 2))
+```
+
+
+```{r}
+var_selected
+```
+
+
+```{r}
+pls_mrna_prot = pls(mrna_filter,protein_filter, ncomp = 3)
+```
+
+```{r}
+plot(pls_mrna_prot$mat.c[,2],pls_mrna_prot$mat.c[,3])
+```
+
+
+
+```{r}
+pls_mrna_prot$ncomp
+```
+
 
 
 ```{r}
 
 ```
 
+```{r}
+
+```
 
 ```{r}
 
 ```
 
-
 ```{r}
 
 ```
-
-
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-v
 

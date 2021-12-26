@@ -1,0 +1,15 @@
+alter (all),resi=str(int(resi)-32)
+alter (all),resi=str(int(resi)+461)
+
+
+color yellow, resi 461-465
+color yellow, resi 468-478
+color yellow, resi 482-487
+color yellow, resi 506-511
+color yellow, resi 519-525
+color yellow, resi 530-540
+
+color red, resi 514-516
+color red, resi 549-574
+
+
